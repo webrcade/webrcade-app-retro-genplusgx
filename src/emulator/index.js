@@ -172,4 +172,6 @@ export class Emulator extends RetroAppWrapper {
     canvas.style.setProperty('max-width', `calc(${size}vh*1.333)`, 'important');
     canvas.style.setProperty('max-height', `calc(${size}vw*0.75)`, 'important');
   }
+
+  getShotAspectRatio() { return 1.333; }
 }
