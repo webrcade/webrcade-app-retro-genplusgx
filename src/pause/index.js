@@ -1,10 +1,10 @@
 import React from 'react';
 import { Component } from 'react';
-import { GenPlusGxSettingsEditor } from './settings';
 
 import { GamepadControlsTab, KeyboardControlsTab } from './controls';
 
 import {
+  AppSettingsEditor,
   CustomPauseScreen,
   EditorScreen,
   GamepadWhiteImage,
@@ -143,7 +143,7 @@ export class EmulatorPauseScreen extends Component {
           />
         ) : null}
         {mode === ModeEnum.GENPLUSGX_SETTINGS ? (
-          <GenPlusGxSettingsEditor
+          <AppSettingsEditor
             emulator={emulator}
             onClose={closeCallback}
           />
