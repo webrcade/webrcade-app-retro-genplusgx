@@ -2,9 +2,9 @@ import React from 'react';
 import { Component } from 'react';
 
 import { GamepadControlsTab, KeyboardControlsTab } from './controls';
+import { GenPlusSettingsEditor } from './settings';
 
 import {
-  AppSettingsEditor,
   CustomPauseScreen,
   EditorScreen,
   GamepadWhiteImage,
@@ -14,8 +14,13 @@ import {
   SaveStatesEditor,
   SaveWhiteImage,
   SegaCdBackground,
+  GenesisBackground,
+  GameGearBackground,
+  MasterSystemBackground,
+  Sg1000Background,
   SettingsAppWhiteImage,
   TEXT_IDS,
+  APP_TYPE_KEYS,
 } from '@webrcade/app-common';
 
 export class EmulatorPauseScreen extends Component {
@@ -64,6 +69,9 @@ export class EmulatorPauseScreen extends Component {
     } = this.props;
     const { cloudEnabled, loaded, mode } = this.state;
 
+    const type = emulator.getApp().type;
+    console.log(emulator.getApp());
+
     if (!loaded) {
       return null;
     }
@@ -83,7 +91,12 @@ export class EmulatorPauseScreen extends Component {
       <PauseScreenButton
         imgSrc={SettingsAppWhiteImage}
         buttonRef={ADDITIONAL_BUTTON_REFS[1]}
-        label="Sega CD Settings"
+        label={
+          type === APP_TYPE_KEYS.RETRO_GENPLUSGX_SG ? "SG-1000 Settings" :
+            type === APP_TYPE_KEYS.RETRO_GENPLUSGX_GG ? "Game Gear Settings" :
+              type === APP_TYPE_KEYS.RETRO_GENPLUSGX_SMS ? "Master Sys Settings" :
+                type === APP_TYPE_KEYS.RETRO_GENPLUSGX_MD ? "Genesis Settings" : "Sega CD Settings"
+        }
         onHandlePad={(focusGrid, e) =>
           focusGrid.moveFocus(e.type, ADDITIONAL_BUTTON_REFS[1])
         }
@@ -109,7 +122,7 @@ export class EmulatorPauseScreen extends Component {
       );
     }
 
-    const gamepad = <GamepadControlsTab />;
+    const gamepad = <GamepadControlsTab type={emulator.getProps().type} />;
     const gamepadLabel = Resources.getText(TEXT_IDS.GAMEPAD_CONTROLS);
 
     return (
@@ -137,20 +150,25 @@ export class EmulatorPauseScreen extends Component {
               {
                 image: KeyboardWhiteImage,
                 label: Resources.getText(TEXT_IDS.KEYBOARD_CONTROLS),
-                content: <KeyboardControlsTab />,
+                content: <KeyboardControlsTab  type={emulator.getProps().type} />,
               },
             ]}
           />
         ) : null}
         {mode === ModeEnum.GENPLUSGX_SETTINGS ? (
-          <AppSettingsEditor
+          <GenPlusSettingsEditor
             emulator={emulator}
             onClose={closeCallback}
           />
         ) : null}
         {mode === ModeEnum.STATE ? (
           <SaveStatesEditor
-            emptyImageSrc={SegaCdBackground}
+            emptyImageSrc={
+              type === APP_TYPE_KEYS.RETRO_GENPLUSGX_SG ? Sg1000Background :
+                type === APP_TYPE_KEYS.RETRO_GENPLUSGX_GG ? GameGearBackground :
+                  type === APP_TYPE_KEYS.RETRO_GENPLUSGX_SMS ? MasterSystemBackground :
+                    type === APP_TYPE_KEYS.RETRO_GENPLUSGX_MD ? GenesisBackground : SegaCdBackground
+            }
             emulator={emulator}
             onClose={closeCallback}
             showStatusCallback={emulator.saveMessageCallback}

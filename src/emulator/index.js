@@ -1,4 +1,5 @@
 import {
+  APP_TYPE_KEYS,
   RetroAppWrapper,
   LOG,
 } from '@webrcade/app-common';
@@ -17,7 +18,75 @@ export class Emulator extends RetroAppWrapper {
   CD_ROM_RAM_EUR = 'scd_E.brm';
   CD_ROM_RAM_JPN = 'scd_J.brm';
 
+  GAME_SRAM_NAME = 'game.srm';
+
   SAVE_NAME = 'sav';
+
+  SYSTEM_SG = 0x10;
+  SYSTEM_SGII = 0x11;
+  SYSTEM_MARKIII = 0x12;
+  SYSTEM_SMS = 0x20;
+  SYSTEM_SMS2 = 0x21;
+  SYSTEM_GG = 0x40;
+  SYSTEM_GGMS = 0x41;
+  SYSTEM_MD = 0x80;
+  SYSTEM_PBC = 0x81;
+  SYSTEM_PICO = 0x82;
+  SYSTEM_MCD = 0x84;
+
+  is2Button() {
+    const systemType = this.getSystemType();
+    return (
+      systemType === this.SYSTEM_SMS ||
+      systemType === this.SYSTEM_SMS2 ||
+      systemType === this.SYSTEM_SG ||
+      systemType === this.SYSTEM_SGII
+    );
+  }
+
+  is3Button() {
+    const props = this.getProps();
+    return props.pad3button !== undefined && props.pad3button === true;
+  }
+
+  getSystemType() {
+    const props = this.getProps();
+
+    switch (props.type) {
+      case APP_TYPE_KEYS.RETRO_GENPLUSGX_MD:
+        return this.SYSTEM_MD;
+      case APP_TYPE_KEYS.RETRO_GENPLUSGX_SEGACD:
+        return this.SYSTEM_MCD;
+      case APP_TYPE_KEYS.RETRO_GENPLUSGX_SMS:
+      {
+        const hwType = props.hwType;
+        switch (hwType) {
+          case 1:
+            return this.SYSTEM_SMS
+          case 2:
+            return this.SYSTEM_SG;
+          default:
+            return this.SYSTEM_SMS2;
+        }
+      }
+      case APP_TYPE_KEYS.RETRO_GENPLUSGX_GG:
+        return this.SYSTEM_GG;
+      case APP_TYPE_KEYS.RETRO_GENPLUSGX_SG:
+        return this.SYSTEM_SG;
+      default:
+        return this.SYSTEM_MD;
+    }
+  }
+
+  isPal() {
+    const props = this.getProps();
+    return props.pal !== undefined && props.pal === true;
+  }
+
+  isYm2413() {
+    const props = this.getProps();
+    return props.ym2413 !== undefined && props.ym2413 === true;
+  }
 
   getScriptUrl() {
     return 'js/genesis_plus_gx_libretro.js';
@@ -38,6 +107,19 @@ export class Emulator extends RetroAppWrapper {
       let path = '';
       const files = [];
       let s = null;
+
+      path = `/home/web_user/retroarch/userdata/saves/${this.GAME_SRAM_NAME}`;
+      LOG.info('Checking: ' + path);
+      try {
+        s = FS.readFile(path);
+        if (s) {
+          LOG.info('Found save file: ' + path);
+          files.push({
+            name: this.GAME_SRAM_NAME,
+            content: s,
+          });
+        }
+      } catch (e) {}
 
       path = `/home/web_user/retroarch/userdata/saves/${this.CART_RAM_NAME}`;
       LOG.info('Checking: ' + path);
@@ -122,6 +204,14 @@ export class Emulator extends RetroAppWrapper {
       if (files) {
         for (let i = 0; i < files.length; i++) {
           const f = files[i];
+
+          if (f.name === this.GAME_SRAM_NAME) {
+            LOG.info(`writing ${this.GAME_SRAM_NAME} file`);
+            FS.writeFile(
+              `/home/web_user/retroarch/userdata/saves/${this.GAME_SRAM_NAME}`,
+              f.content,
+            );
+          }
           if (f.name === this.CART_RAM_NAME) {
             LOG.info(`writing ${this.CART_RAM_NAME} file`);
             FS.writeFile(
