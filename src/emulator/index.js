@@ -1,6 +1,8 @@
 import {
   APP_TYPE_KEYS,
   RetroAppWrapper,
+  ScriptAudioProcessor,
+  DisplayLoop,
   LOG,
 } from '@webrcade/app-common';
 
@@ -11,6 +13,16 @@ export class Emulator extends RetroAppWrapper {
 
     // Allow game saves to persist after loading state
     this.saveManager.setDisableGameSaveOnStateLoad(false);
+
+    this.lastFrequency = 60;
+    this.frequency = 60;
+
+    this.audioStarted = 0;
+    this.audioCallback = (offset, length) => {
+      length = length << 1;
+      const audioArray = new Int16Array(window.Module.HEAP16.buffer, offset, length);
+      this.audioProcessor.storeSoundCombinedInput(audioArray, 2, length, 0, 32768);
+    };
   }
 
   CART_RAM_NAME = 'cart.brm';
@@ -33,6 +45,27 @@ export class Emulator extends RetroAppWrapper {
   SYSTEM_PBC = 0x81;
   SYSTEM_PICO = 0x82;
   SYSTEM_MCD = 0x84;
+
+  createAudioProcessor() {
+    return new ScriptAudioProcessor(
+      2,
+      48000,
+      32768,
+      4096
+    ).setDebug(this.debug);
+  }
+
+  onFrame() {
+    if (this.audioStarted !== -1) {
+      if (this.audioStarted > 1) {
+        this.audioStarted = -1;
+        // Start the audio processor
+        this.audioProcessor.start();
+      } else {
+        this.audioStarted++;
+      }
+    }
+  }
 
   is2Button() {
     const systemType = this.getSystemType();
@@ -114,11 +147,31 @@ export class Emulator extends RetroAppWrapper {
         s = FS.readFile(path);
         if (s) {
           LOG.info('Found save file: ' + path);
-          files.push({
-            name: this.GAME_SRAM_NAME,
-            content: s,
-          });
+          let hasData = false;
+          for (let i = 0; i < s.length; i++) {
+            if (s[i] !== 0xFF) {
+              hasData = true;
+              break; // exit early
+            }
+          }
+
+          if (hasData) {
+            LOG.info('File has content: ' + path);
+            files.push({
+              name: this.GAME_SRAM_NAME,
+              content: s,
+            });
+          } else {
+            LOG.info('Skipping empty file: ' + path);
+          }
         }
+        // if (s) {
+        //   LOG.info('Found save file: ' + path);
+        //   files.push({
+        //     name: this.GAME_SRAM_NAME,
+        //     content: s,
+        //   });
+        // }
       } catch (e) {}
 
       path = `/home/web_user/retroarch/userdata/saves/${this.CART_RAM_NAME}`;
@@ -287,6 +340,33 @@ export class Emulator extends RetroAppWrapper {
     // canvas.style.setProperty('max-width', `calc(${size}vh*1.22)`, 'important');
     // canvas.style.setProperty('max-height', `calc(${size}vw*0.82)`, 'important');
     this.updateScreenSize();
+  }
+
+
+  createDisplayLoop(debug) {
+    const loop = new DisplayLoop(
+      60 /*this.frequency*/,
+      true, // vsync
+      debug, // debug
+      false,
+    );
+    // loop.setAdjustTimestampEnabled(false);
+    return loop;
+  }
+
+  setRefreshRate(rate) {
+    if (rate !== this.frequency) {
+      this.frequency = rate;
+    }
+  }
+
+  getDisplayLoopReturn() {
+    if (this.lastFrequency !== this.frequency) {
+      this.lastFrequency = this.frequency;
+      console.log('returning: ' + this.frequency);
+      return this.frequency;
+    }
+    return undefined;
   }
 
   getShotAspectRatio() { return this.getDefaultAspectRatio(); }
