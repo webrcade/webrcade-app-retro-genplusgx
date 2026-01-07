@@ -23,8 +23,8 @@ export class GenPlusSettingsEditor extends Component {
     const { emulator } = this.props;
 
     const values = {
-      origBilinearMode: emulator.getPrefs().isBilinearEnabled(),
-      bilinearMode: emulator.getPrefs().isBilinearEnabled(),
+      origBilinearMode: emulator.getPrefs().getBilinearMode(),
+      bilinearMode: emulator.getPrefs().getBilinearMode(),
       origScreenSize: emulator.getPrefs().getScreenSize(),
       screenSize: emulator.getPrefs().getScreenSize(),
     }
@@ -55,8 +55,7 @@ export class GenPlusSettingsEditor extends Component {
         onOk={async () => {
           let updated = false;
           if (values.origBilinearMode !== values.bilinearMode) {
-            emulator.getPrefs().setBilinearEnabled(values.bilinearMode);
-            emulator.updateBilinearFilter();
+            emulator.getPrefs().setBilinearMode(values.bilinearMode);
             updated = true;
           }
           if (values.origScreenSize !== values.screenSize) {
@@ -70,6 +69,7 @@ export class GenPlusSettingsEditor extends Component {
 
           // Set the shader
           await this.shaderService.setShader(values.shaderId);
+          emulator.updateBilinearFilter();
 
           onClose();
         }}
@@ -83,6 +83,7 @@ export class GenPlusSettingsEditor extends Component {
             content: (
               <AppDisplaySettingsTab
                 emulator={emulator}
+                isBilinearMode={true}
                 isActive={tabIndex === 0}
                 setFocusGridComps={setFocusGridComps}
                 values={values}
