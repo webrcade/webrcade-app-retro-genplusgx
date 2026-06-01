@@ -67,6 +67,15 @@ export class Emulator extends RetroAppWrapper {
     ).setDebug(this.debug);
   }
 
+  getHashFileExtension() {
+    const type = this.getProps().type;
+    if (type === APP_TYPE_KEYS.RETRO_GENPLUSGX_SG) return 'sg';
+    if (type === APP_TYPE_KEYS.RETRO_GENPLUSGX_SMS) return 'sms';
+    if (type === APP_TYPE_KEYS.RETRO_GENPLUSGX_GG) return 'gg';
+    if (type === APP_TYPE_KEYS.RETRO_GENPLUSGX_SEGACD) return 'chd';
+    return 'md'; // Genesis
+  }
+
   onFrame() {
     if (this.audioStarted !== -1) {
       if (this.audioStarted > 1) {
