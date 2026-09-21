@@ -1,12 +1,12 @@
 import {
   APP_TYPE_KEYS,
-  RetroAppWrapper,
+  BasicRetroAppWrapper,
   ScriptAudioProcessor,
   DisplayLoop,
   LOG,
 } from '@webrcade/app-common';
 
-export class Emulator extends RetroAppWrapper {
+export class Emulator extends BasicRetroAppWrapper {
 
   constructor(app, debug = false) {
     super(app, debug);
@@ -77,6 +77,8 @@ export class Emulator extends RetroAppWrapper {
   }
 
   onFrame() {
+    super.onFrame();
+
     if (this.audioStarted !== -1) {
       if (this.audioStarted > 1) {
         this.audioStarted = -1;
@@ -87,6 +89,20 @@ export class Emulator extends RetroAppWrapper {
       }
     }
   }
+
+  // WRC - Genesis/Master System/Game Gear/SG-1000 pads all have no analog
+  // trigger at all, same as the other trigger-less consoles already
+  // confirmed this pass (retro-neocd/picodrive/pcfx/opera/pce-fast) -
+  // left at the inherited `true` default, same mistake class.
+  isEscapeHackEnabled() {
+    return false;
+  }
+
+  // Base class default pauses on any tap anywhere on screen -- redundant
+  // (and disruptive) now that there's a dedicated Pause button in the
+  // touch overlay. Same override every other TouchOverlay app uses for
+  // the same reason.
+  createTouchListener() {}
 
   is2Button() {
     const systemType = this.getSystemType();
